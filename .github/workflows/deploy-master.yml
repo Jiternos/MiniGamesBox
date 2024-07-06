@@ -1,46 +1,43 @@
-name: Bump and Publish Master Branch
-
+name: Upload MiniGamesBox-Classic artifact
 on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'MiniGamesBox Classic/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
   pull_request:
     types:
       - closed
+    paths:
+      - 'MiniGamesBox Classic/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
   workflow_dispatch:
+
 jobs:
-  bump:
-    if: github.event.pull_request.merged
+  build-and-upload:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Latest Commit
         uses: actions/checkout@v4.1.1
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-      - name: Bump Version
-        id: bump
-        uses: Plugily-Projects/version-bump-action@v8
-        with:
-          github-token: ${{ secrets.github_token }}
-          auto-version-bump: false
-          auto-version-bump-release: true
-      - name: Print Version
-        run: "echo 'New Version: ${{steps.bump.outputs.version}}'"
-  publish:
-    needs: bump
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Latest Commit
-        uses: actions/checkout@v4.1.1
-        with:
-          ref: 'master'
+
       - name: Set up JDK
         uses: actions/setup-java@v4.1.0
         with:
           distribution: 'temurin'
           java-version: '17'
           java-package: jdk
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-      - name: Publish with Gradle
-        run: ./gradlew publishMavenPublicationToReleasesRepository
-        env:
-          MAVEN_USERNAME: ${{ secrets.RELEASESUSERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.RELEASESPASSWORD }}
+
+      - name: Build MiniGamesBox-Classic with ShadowJar
+        run: ./gradlew :MiniGamesBox-Classic:shadowJar
+
+      - name: Upload MiniGamesBox-Classic Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: MiniGamesBox-Classic
+          path: MiniGamesBox Classic/build/libs/*-all.jar
